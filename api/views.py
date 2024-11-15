@@ -18,7 +18,24 @@ api_key=os.environ.get("weather_api_key")
 class LocationWeatherApiView(APIView):
     throttle_classes = [UserRateThrottle,MinuteRateThrottle]
 
-    @swagger_auto_schema(manual_parameters = [openapi.Parameter('city', openapi.IN_QUERY, description="city parameter", type=openapi.TYPE_STRING)])
+    @swagger_auto_schema(
+            operation_description="دریافت اطلاعات آب و هوایی برای یک شهر مشخص.",
+            manual_parameters = [openapi.Parameter('city', openapi.IN_QUERY, description="city parameter", type=openapi.TYPE_STRING)],
+            responses={
+            200: openapi.Response(
+                description="اطلاعات آب و هوایی با موفقیت بازگردانده شد.",
+                examples={
+                    "application/json": {
+                        "city": "London",
+                        "temperature": "15°C",
+                        "humidity": "60%",
+                        "description": "Clear sky"
+                    }
+                },
+            ),
+            400: "پارامترهای ارسالی معتبر نیستند.",
+            500: "خطای سرور یا ارتباط با API خارجی.",
+        },)
     
     def get(self,request):
         city=request.query_params.get('city')
@@ -38,8 +55,10 @@ class LocationWeatherApiView(APIView):
 
             if response.status_code == 200:
                 response_data = response.json()
-                cache.set(cache_key , response_data, timeout=60*60)
+                cache.set(cache_key , response_data, timeout=60*60*12)
                 return Response(response_data)
+            elif response.status_code == 404:
+                return Response({'error':'city not found'},status=status.HTTP_404_NOT_FOUND)
             else:
                 return Response({'error':'Unable to fetch data'},status=response.status_code)       
         except requests.exceptions.RequestException as e:
@@ -57,13 +76,22 @@ class LatLonWeatherApiView(APIView):
         lon=request.query_params.get('longitude')
         if lat==None or lon==None:
             return Response({'error':'latitude and longitude can not be None'})
+        
+        key_cache = f'Weather_data_{lat}_{lon}'
+        cache_data = cache.get(key_cache)
+
+        if cache_data:
+            return Response(cache_data)
         weather_url=f'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{lat},{lon}?key={api_key}'
         try:
             response=requests.get(weather_url)
-            response_data=response.json()
 
             if response.status_code == 200:
+                response_data=response.json()
+                cache.set(key_cache , response_data , timeout=60*60*12)
                 return Response(response_data)
+            elif response.status_code == 404:
+                return Response({'error':'location not found!'},status=status.HTTP_404_NOT_FOUND)
             return Response({'error':'Unable to get fetch data'})
         except:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)

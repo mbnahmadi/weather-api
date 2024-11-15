@@ -102,7 +102,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
         'user': '100/day',   
-        'user_minute': '5/minute'
+        'user_minute': '10/minute'
     }
 }
 # Password validation

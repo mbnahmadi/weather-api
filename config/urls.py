@@ -25,9 +25,19 @@ schema_view = get_schema_view(
    openapi.Info(
       title="Snippets API",
       default_version='v1',
-      description="Test description",
-      terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="contact@snippets.local"),
+      description="""
+        این API برای دریافت اطلاعات آب و هوایی طراحی شده است.
+
+        **محدودیت سرعت**: 
+        - حداکثر 10 درخواست در هر دقیقه برای هر کاربر مجاز است.
+        - لطفاً درخواست‌های خود را مدیریت کنید تا از خطاهای محدودیت جلوگیری شود.
+
+        **خطاهای احتمالی**:
+        - `400` : اگر پارامترهای ارسالی صحیح نباشند.
+        - `500` : خطاهای سرور یا مشکلات ارتباطی با API خارجی.
+        """,
+    #   terms_of_service="https://www.google.com/policies/terms/",
+    #   contact=openapi.Contact(email="contact@snippets.local"),
       license=openapi.License(name="BSD License"),
    ),
    public=True,
